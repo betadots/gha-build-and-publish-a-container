@@ -35,6 +35,13 @@ inputs:
     description: The password to use for the docker registry.
   tags:
     description: The tags to use for the container. This is a string of tags seperated by a newline.
+  sbom:
+    description: Whether to generate a SBOM or not.
+    default: 'true'
+  provenance:
+    # see https://github.com/docker/build-push-action/issues/820
+    description: Whether to include provenance or not.
+    default: 'false'
 
 runs:
   using: "composite"
@@ -75,12 +82,12 @@ runs:
     - name: Build and push
       uses: docker/build-push-action@v6
       with:
+        build-args: ${{ inputs.build_args }}
         context: ${{ inputs.build_context }}
-        # see https://github.com/docker/build-push-action/issues/820
-        provenance: false
+        file: ${{ inputs.buildfile }}
         platforms: ${{ inputs.build_arch }}
+        provenance: ${{ inputs.provenance == 'true' }} # checking for "if true" so it is false
         push: ${{ inputs.publish == 'true' }}
+        sbom: ${{ inputs.sbom == 'true' }}
         # if publish is false, tag as test, otherwise use the tags from the previous step
         tags: ${{ inputs.publish == 'true' && steps.tags.outputs.tags || inputs.tags }}
-        file: ${{ inputs.buildfile }}
-        build-args: ${{ inputs.build_args }}
